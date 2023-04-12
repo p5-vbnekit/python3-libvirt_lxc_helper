@@ -1,0 +1,109 @@
+# JSON also supported
+
+exclude: true # exclude (remove) this file from final rootfs archive (`true` by default)
+
+environment: # `{inherit: true, payload: {}}` by default
+  # `environment: true` will be parsed like `environment: {inherit: true, payload: {}}`
+  # `environment: false` will be parsed like `environment: {inherit: false, payload: {}}`
+
+  inherit: true # inherit oci-image environment variables (`true` by default)
+
+  payload: # overload/add/remove variables
+    A: A
+    B: B
+    # `EXAMPLE_A` - will be inherited by default (check `Dockerfile`) because global `environment.inherit` is `true`
+    # `EXAMPLE_B`, `EXAMPLE_C`, `EXAMPLE_D` - global `environment.inherit` option will be ignored for this variables
+    EXAMPLE_B: true # will be force inherited
+    EXAMPLE_C: false # will be removed
+    EXAMPLE_D: "replaced by .p5.libvirt_lxc_helper.script.yml" # will be replaced
+
+body: # a list with commands
+  # sting will be interpreted as `command` key by default
+  # any space symbol as argument separator
+  # will be parsed like `{command: [mkdir, --parents, /.p5.libvirt_lxc_helper.script.example]}`
+  - mkdir --parents /.p5.libvirt_lxc_helper.script.example
+
+  # list will be interpreted as `command` key by default
+  # will be parsed like `{command: [touch, /.p5.libvirt_lxc_helper.script.example/empty.txt]}`
+  - [touch, /.p5.libvirt_lxc_helper.script.example/empty.txt]
+
+  - command: /bin/sh
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/0.txt # command stdin (`/bin/sh` code)
+
+  - command: /bin/sh
+    # command-level environment, will be parsed same as global option
+    # default is `{inherit: true, payload: {}}`
+    environment:
+      # if global `environment.inherit` option is `false` then oci-image environment will be ignored
+      inherit: true # inherit script-level environment (`true` by default)
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/1.txt
+
+  - command: /bin/sh
+    environment: true # will be parsed like `environment: {inherit: true, payload: {}}` (same as `1.txt`)
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/2.txt
+
+  - command: /bin/sh
+    # empty environment (only `PWD=/` expected)
+    # will be parsed like `environment: {inherit: false, payload: {}}`
+    environment: false
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/3.txt
+
+  - command: /bin/sh
+    environment:
+      # if `payload` option is not dictionary (or omitted) or `inherit` is not boolean
+      #   then `environment` option will be parsed like `environment.payload`
+      # in this case it will be parsed like `{inherit: true, payload: {inherit: "false", payload: 4, B: 4, C: 4}}`
+      inherit: "false" # will be parsed like `payload.inherit = "false"`, because not boolean
+      payload: 4 # will be parsed like `payload.payload = 4`, because not dictionary
+      B: 4 # will be replaced to "4"
+      C: 4 # will be added as "4"
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/4.txt
+
+  - command: /bin/sh
+    environment:
+      # list of dictionaries will be merged
+      # will be parsed like `{inherit: true, payload: {B: 5, C: 5}}`
+      - B: 5 # will be replaced to "5"
+      - {C: 5} # will be added as "5"
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/5.txt
+
+  - command: /bin/sh
+    environment:
+      inherit: false
+      payload: {B: true, C: 6} # A will be removed, B will be inherited as "B", C will be added as "6"
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/6.txt
+
+  - command: /bin/sh
+    environment:
+      inherit: true
+      payload:
+        A: false # will be removed
+        B: 7 # will be replaced to "7"
+        C: 7 # will be added as "7"
+    input: env | sort > /.p5.libvirt_lxc_helper.script.example/7.txt
+
+  - command:
+    - tar
+    - --create
+    - --directory=/.p5.libvirt_lxc_helper.script.example
+    - --file=/.p5.libvirt_lxc_helper.script.example.tar
+    - .
+
+  - command: rm --force --recursive /.p5.libvirt_lxc_helper.script.example
+
+  - command: /bin/sh -xe
+    input: |
+      rm --force /etc/hostname && echo nginx > /etc/hostname
+      rm --force /etc/resolv.conf && ln --symbolic /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+      rm --force /etc/hosts && cat > /etc/hosts << EOF
+      127.0.0.1       localhost
+
+      # The following lines are desirable for IPv6 capable hosts
+      ::1             localhost ip6-localhost ip6-loopback
+      ff02::1         ip6-allnodes
+      ff02::2         ip6-allrouters
+
+      ::1             nginx
+      127.0.0.1       nginx
+      EOF

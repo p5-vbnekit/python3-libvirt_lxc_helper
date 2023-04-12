@@ -1,0 +1,134 @@
+on: push
+
+permissions: { contents: read }
+
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-python@v3
+    - name: Installing dependencies
+      run: |
+        # installing dependencies
+        python -m pip install --upgrade pip
+        pip install --upgrade flake8
+    - uses: actions/checkout@v3
+      with: { path: snapshot }
+    - name: Executing `flake8`
+      run: |
+        # executing `flake8`
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 ./snapshot --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 ./snapshot --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  util-linux:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.debian }}
+    steps:
+    - id: version
+      run: |
+        _upstream=2.38.1; _debian="${_upstream}-5"
+        echo "debian=${_debian}" >> "$GITHUB_OUTPUT"
+        echo "upstream=${_upstream}" >> "$GITHUB_OUTPUT"
+    - id: cache
+      uses: actions/cache@v3
+      with:
+        key: 3rd-party/util-linux/${{ steps.version.outputs.debian }}
+        path: 3rd-party/util-linux
+    - if: steps.cache.outputs.cache-hit != 'true'
+      name: Installing dependencies
+      run: |
+        # installing dependencies
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt update --assume-yes
+        sudo apt install --assume-yes devscripts dpkg-dev \
+          asciidoctor debhelper-compat dh-exec po-debconf socat \
+          libaudit-dev libcap-ng-dev libcryptsetup-dev libpam0g-dev libsystemd-dev libudev-dev
+        sudo apt autoremove --assume-yes
+        sudo apt purge --assume-yes '~c'
+    - if: steps.cache.outputs.cache-hit != 'true'
+      name: Building via debuild
+      run: |
+        # building via debuild
+        mkdir --parents ./3rd-party/util-linux/build
+        cd ./3rd-party/util-linux/build
+        _debian_version="${{ steps.version.outputs.debian }}"
+        _upstream_version="${{ steps.version.outputs.upstream }}"
+        for _url in \
+          "http://deb.debian.org/debian/pool/main/u/util-linux/util-linux_${_upstream_version}.orig.tar.xz" \
+          "http://deb.debian.org/debian/pool/main/u/util-linux/util-linux_${_debian_version}.debian.tar.xz" \
+        ; do curl --remote-name "${_url}"; done
+        tar --extract --file="util-linux_${_upstream_version}.orig.tar.xz"
+        tar --extract --file="util-linux_${_debian_version}.debian.tar.xz" --directory="util-linux-${_upstream_version}"
+        (cd "./util-linux-${_upstream_version}" && debuild --no-sign)
+        cd ..
+        mv ./build/*.deb ./
+        rm --force --recursive ./build
+    - uses: actions/upload-artifact@v3
+      with:
+        name: util-linux
+        path: 3rd-party/util-linux
+
+  pytest:
+    runs-on: ubuntu-latest
+    needs: [util-linux]
+    steps:
+    - uses: actions/cache@v3
+      with:
+        key: 3rd-party/util-linux/${{ needs.util-linux.outputs.version }}
+        path: 3rd-party/util-linux
+        fail-on-cache-miss: true
+    - uses: actions/setup-python@v3
+    - name: Installing dependencies
+      run: |
+        # installing dependencies
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt update --assume-yes
+        sudo apt purge --assume-yes moby-runc moby-containerd
+        sudo apt autoremove --assume-yes
+        sudo apt purge --assume-yes '~c'
+        sudo apt install --assume-yes oci-image-tool
+        sudo apt install --assume-yes buildah podman docker.io skopeo
+        _util_linux_version="${{ needs.util-linux.outputs.version }}"
+        (cd ./3rd-party/util-linux && sudo apt install --assume-yes \
+          "./util-linux_${_util_linux_version}_amd64.deb" "./util-linux-extra_${_util_linux_version}_amd64.deb" \
+          "./libmount1_${_util_linux_version}_amd64.deb" "./libsmartcols1_${_util_linux_version}_amd64.deb" \
+        )
+        python -m pip install --upgrade pip
+        pip install --upgrade pytest pyyaml
+    - uses: actions/checkout@v3
+      with: { path: snapshot }
+    - name: Installing this package
+      run: pip install --upgrade ./snapshot
+    - id: cache
+      uses: actions/cache@v3
+      with:
+        key: oci/examples/nginx/${{ hashFiles('snapshot/examples/nginx') }}
+        path: temporary/oci
+    - if: steps.cache.outputs.cache-hit != 'true'
+      name: Generating oci images
+      run: |
+        # generating oci images
+        mkdir --parents temporary/oci
+        docker build --pull --tag=example -- ./snapshot/examples/nginx/docker
+        buildah build --pull --layers --tag=example -- ./snapshot/examples/nginx/docker
+        buildah push localhost/example oci-archive:temporary/oci/buildah.tar
+        podman image save --format=oci-archive -- localhost/example > temporary/oci/podman.tar
+        skopeo copy docker-daemon:example:latest oci-archive:temporary/oci/docker.tar
+    - name: Executing `pytest`
+      run: |
+        # executing `pytest`
+        pytest -ra --basetemp=temporary/pytest \
+          --tests.examples.nginx-source=temporary/oci/docker.tar \
+          --tests.examples.nginx-source=temporary/oci/podman.tar \
+          --tests.examples.nginx-source=temporary/oci/buildah.tar \
+        ./snapshot/tests
+    - if: failure()
+      run: sudo tar --create --directory=temporary -- . | xz > test-context.tar.xz
+    - if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-context
+        path: test-context.tar.xz
