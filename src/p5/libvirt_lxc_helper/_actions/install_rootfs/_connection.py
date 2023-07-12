@@ -55,7 +55,6 @@ def _private():
 
     def _parse_filesystem(value: xml.etree.ElementTree.Element):
         assert isinstance(value, xml.etree.ElementTree.Element)
-        _value = None
         try: _type = value.attrib["type"]
         except KeyError: return None
         if "mount" != _type: return None

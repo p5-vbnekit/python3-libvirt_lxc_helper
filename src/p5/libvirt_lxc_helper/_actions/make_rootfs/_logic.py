@@ -190,7 +190,7 @@ def _private():
                         source = source, digest = digest, working_directory = os.path.join(working_directory, "fake")
                     )
                     if destination is None: print(
-                        f"writing rootfs tar archive to stdout", file = sys.stderr, flush = True
+                        "writing rootfs tar archive to stdout", file = sys.stderr, flush = True
                     )
                     else: print(f"writing rootfs tar archive file: {destination}", file = sys.stderr, flush = True)
                     with _make_destination(

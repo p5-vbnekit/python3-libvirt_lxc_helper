@@ -19,7 +19,7 @@ if "__main__" != __name__:
                 @staticmethod
                 def module_name(value: typing.Union[type(None), _Types.ModuleName], make_default: typing.Callable):
                     if value is None: return make_default()
-                    assert(isinstance(value, _Types.ModuleName) and bool(value) and (not value.startswith(".")))
+                    assert isinstance(value, _Types.ModuleName) and bool(value) and (not value.startswith("."))
                     return value
 
                 @classmethod
@@ -33,13 +33,14 @@ if "__main__" != __name__:
                 def __factory(key: typing.Union[str, type(None)], value: typing.Union[_Types.Factory, type(None)]):
                     if key is None:
                         if value is None: return None
-                    else: assert(isinstance(key, str) and bool(key) and (1 == len(key.split("."))))
+                    else: assert isinstance(key, str) and bool(key) and (1 == len(key.split(".")))
                     _parameters = inspect.signature(value).parameters
                     _parameters_count = len(_parameters)
                     if 1 > _parameters_count: return lambda module, name: value()
                     if 2 > _parameters_count:
                         _parameter = next(iter(_parameters.values()))
-                        if _parameter.VAR_KEYWORD == _parameter.kind: return lambda module, name: value(module = module, name = name)
+                        if _parameter.VAR_KEYWORD == _parameter.kind:
+                            return lambda module, name: value(module = module, name = name)
                         if _parameter.VAR_POSITIONAL == _parameter.kind: return lambda module, name: value(name)
                         _parameter = _parameter.name
                         if "name" == _parameter: return lambda module, name: value(name = name)
@@ -57,8 +58,6 @@ if "__main__" != __name__:
 
                 def __init__(cls, *args, **kwargs):
                     super().__init__(*args, **kwargs)
-
-                    import inspect
 
                     _module_name = _ValidateAndMake.module_name(value = cls.module_name, make_default = lambda: cls.__module__)
                     _module = sys.modules[_module_name]
@@ -78,8 +77,8 @@ if "__main__" != __name__:
                     _recursion_protector = set()
 
                     def _getter(name: str):
-                        assert(isinstance(name, str) and bool(name))
-                        assert(1 == len(name.split(".")))
+                        assert isinstance(name, str) and bool(name)
+                        assert 1 == len(name.split("."))
                         if name in _recursion_protector:
                             try: raise RuntimeError("recursion rejected")
                             finally: raise AttributeError(name)
