@@ -13,7 +13,6 @@ def _private():
     _Item = _item_module.Class
     _Range = _range_module.Class
 
-    _make_item = _item_module.make
     _make_range = _range_module.make
 
     class _CollisionError(Exception): pass

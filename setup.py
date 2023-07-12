@@ -34,7 +34,10 @@ def _private():
 
                 def get_outputs(self, *args, **kwargs):
                     _original_result = super().get_outputs(*args, **kwargs)
-                    return (type(_original_result))((*_original_result, *[os.path.join(self.build_lib, _generated.path) for _generated in _Generators.get()]))
+                    return (type(_original_result))((
+                        *_original_result,
+                        *[os.path.join(self.build_lib, _generated.path) for _generated in _Generators.get()]
+                    ))
 
             return _Result
 

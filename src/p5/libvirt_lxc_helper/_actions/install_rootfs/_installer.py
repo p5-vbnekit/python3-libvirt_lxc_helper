@@ -20,10 +20,8 @@ def _private():
     from ... import _common as _common_module
 
     _IdMap = _id_map_module.Class
-    _TarReader = _common_module.tar.Reader
     _Asynchronizer = _common_module.Asynchronizer
 
-    _make_id_map = _id_map_module.make
     _normalize_path = _common_module.path.normalize
     _make_tar_reader = _common_module.tar.reader.make
     _make_tar_writer = _common_module.tar.writer.make

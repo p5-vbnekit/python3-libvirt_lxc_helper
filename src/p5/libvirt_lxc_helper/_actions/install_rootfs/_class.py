@@ -31,7 +31,7 @@ def _private():
                 "--dry-mode", required = False, action = "store_true", help = "do not write anything",
                 dest = f"{self.name}/dry-mode"
             ).dest)
-            def _routine(value: typing.Optional[bool]):
+            def _routine(value: typing.Optional[bool]):  # noqa: F811
                 if value is None: return False
                 assert isinstance(value, bool)
                 return value
@@ -41,7 +41,7 @@ def _private():
                 "-s", "--source", required = False, help = "source (oci image)",
                 dest = f"{self.name}/source"
             ).dest)
-            def _routine(value: typing.Optional[str]):
+            def _routine(value: typing.Optional[str]):  # noqa: F811
                 if value is not None:
                     assert isinstance(value, str)
                     assert value
@@ -54,7 +54,7 @@ def _private():
                 "-d", "--destination", required = True, help = "lxc container",
                 dest = f"{self.name}/destination"
             ).dest)
-            def _routine(value: str):
+            def _routine(value: str):  # noqa: F811
                 assert isinstance(value, str)
                 assert value
                 value, = f"{value}\r\n".splitlines()

@@ -14,8 +14,6 @@ def _private():
 
     from ... import _common as _common_module
 
-    _Asynchronizer = _common_module.asynchronizer.make
-
     _spawn_installer = _installer_module.spawn
     _make_asynchronizer = _common_module.asynchronizer.make
 

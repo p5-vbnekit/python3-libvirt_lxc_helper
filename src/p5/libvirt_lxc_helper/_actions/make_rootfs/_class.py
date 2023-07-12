@@ -44,7 +44,7 @@ def _private():
                 "-d", "--digest", required = False, help = "digest",
                 dest = f"{self.name}/digest"
             ).dest)
-            def _routine(value: typing.Optional[str]):
+            def _routine(value: typing.Optional[str]):  # noqa: F811
                 if value is not None: value = _parse_digest(value = value).value
                 return value
 
@@ -53,7 +53,7 @@ def _private():
                 "-S", "--source", required = False, help = "source (oci image)",
                 dest = f"{self.name}/source"
             ).dest)
-            def _routine(value: typing.Optional[str]):
+            def _routine(value: typing.Optional[str]):  # noqa: F811
                 if value is not None:
                     assert isinstance(value, str)
                     assert value
@@ -66,7 +66,7 @@ def _private():
                 "-D", "--destination", required = False, help = "destination (rootfs bundle)",
                 dest = f"{self.name}/destination"
             ).dest)
-            def _routine(value: typing.Optional[str]):
+            def _routine(value: typing.Optional[str]):  # noqa: F811
                 if value is not None:
                     assert isinstance(value, str)
                     assert value
@@ -78,7 +78,7 @@ def _private():
                 "-w", "--working-directory", required = False, help = "working-directory",
                 dest = f"{self.name}/working-directory"
             ).dest)
-            def _routine(value: typing.Optional[str]):
+            def _routine(value: typing.Optional[str]):  # noqa: F811
                 if value is not None:
                     assert isinstance(value, str)
                     assert value
