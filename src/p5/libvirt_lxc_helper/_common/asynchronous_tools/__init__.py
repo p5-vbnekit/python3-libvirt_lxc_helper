@@ -10,7 +10,9 @@ def _private():
     _make_lazy_getter = _module_helpers_module.lazy_attributes.make_getter
 
     class _Result(object):
-        lazy_getter = _make_lazy_getter(dictionary = {})
+        lazy_getter = _make_lazy_getter(dictionary = {
+            "ThreadPool": lambda module: module.thread_pool.Class
+        })
 
     return _Result
 
