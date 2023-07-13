@@ -14,7 +14,6 @@ def _private():
             "Action": lambda module: module.action.Class,
             "CliValidator": lambda module: module.cli_validator.Class,
             "PlatformInfo": lambda module: module.platform_info.Class,
-            "Asynchronizer": lambda module: module.asynchronizer.Class,
             "ContextManipulator": lambda module: module.context_manipulator.Class
         })
 
