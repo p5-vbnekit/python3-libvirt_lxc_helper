@@ -31,8 +31,7 @@ def _private():
                 "--dry-mode", required = False, action = "store_true", help = "do not write anything",
                 dest = f"{self.name}/dry-mode"
             ).dest)
-            def _routine(value: typing.Optional[bool]):  # noqa: F811
-                if value is None: return False
+            def _routine(value: bool):  # noqa: F811
                 assert isinstance(value, bool)
                 return value
 

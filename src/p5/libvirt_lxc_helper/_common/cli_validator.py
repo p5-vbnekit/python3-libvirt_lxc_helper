@@ -44,7 +44,7 @@ def _private():
                 except KeyError:
                     if allow_unknown: continue
                     raise
-                _validator(value = _value)
+                arguments[_key] = _validator(value = _value)
                 _keys.remove(_key)
             try: assert not _keys
             except AssertionError: raise ValueError(f"keys not found: {_keys}")
