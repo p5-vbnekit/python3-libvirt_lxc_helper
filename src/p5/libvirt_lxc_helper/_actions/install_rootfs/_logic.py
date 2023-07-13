@@ -15,7 +15,7 @@ def _private():
 
     _spawn_installer = _installer_module.spawn
     _make_thread_pool = _common_module.asynchronous_tools.thread_pool.make
-    _make_asynchronizer = _common_module.asynchronizer.make
+    _make_asynchronizer = _common_module.asynchronous_tools.asynchronizer.make
 
     @contextlib.asynccontextmanager
     async def _open_asynchronizer():

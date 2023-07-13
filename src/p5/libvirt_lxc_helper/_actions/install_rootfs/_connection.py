@@ -14,7 +14,7 @@ def _private():
 
     from ... import _common as _common_module
 
-    _Asynchronizer = _common_module.Asynchronizer
+    _Asynchronizer = _common_module.asynchronous_tools.Asynchronizer
 
     _make_id_map = _id_map_module.make
     _normalize_path = _common_module.path.normalize
