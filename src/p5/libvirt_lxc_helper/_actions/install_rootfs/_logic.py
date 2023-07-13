@@ -8,21 +8,21 @@ def _private():
     import typing
     import asyncio
     import contextlib
-    import concurrent.futures
 
     from . import _installer as _installer_module
 
     from ... import _common as _common_module
 
     _spawn_installer = _installer_module.spawn
+    _make_thread_pool = _common_module.asynchronous_tools.thread_pool.make
     _make_asynchronizer = _common_module.asynchronizer.make
 
     @contextlib.asynccontextmanager
     async def _open_asynchronizer():
-        _loop = asyncio.get_running_loop()
-        assert isinstance(_loop, asyncio.AbstractEventLoop)
-        with concurrent.futures.ThreadPoolExecutor() as _thread_pool:
-            yield _make_asynchronizer(executor = lambda delegate: _loop.run_in_executor(_thread_pool, delegate))
+        with _make_thread_pool() as _thread_pool:
+            def _spawn(delegate: typing.Callable): return _thread_pool(delegate)
+            _thread_pool.open()
+            yield await _thread_pool(_make_asynchronizer, executor = _spawn)
 
     async def _coroutine(dry: bool, source: typing.Optional[str], destination: str):
         assert isinstance(destination, str)
