@@ -142,7 +142,7 @@ def _private():
 
             async def _coroutine():
                 while True:
-                    await _asynchronizer(lambda: _check_domain(instance = instance))
+                    await _asynchronizer(_check_domain, instance = instance)
                     await asyncio.sleep(1 / +3.0e+0)
 
             return asyncio.create_task(_coroutine())
@@ -164,12 +164,12 @@ def _private():
             _context = _Context()
             try:
                 _context.connection = typing.cast(
-                    libvirt.virConnect, await self.__helper.asynchronizer(lambda: libvirt.open("lxc://"))
+                    libvirt.virConnect, await self.__helper.asynchronizer(libvirt.open, "lxc://")
                 )
                 _context.domain = typing.cast(libvirt.virDomain, await self.__helper.asynchronizer(
-                    lambda: _context.connection.lookupByName(self.__domain)
+                    _context.connection.lookupByName, self.__domain
                 ))
-                await self.__helper.asynchronizer(lambda: _check_domain(instance = _context.domain))
+                await self.__helper.asynchronizer(_check_domain, instance = _context.domain)
                 _context.monitoring_task = self.__helper.make_domain_monitoring_task(instance = _context.domain)
 
                 _context.id_map, _context.path = await self.__helper.asynchronizer(

@@ -59,7 +59,7 @@ def _private():
         return path
 
     @contextlib.contextmanager
-    def _make_fifo():
+    def _open_fifo():
         _reader, _writer = os.pipe()
 
         try:
@@ -102,7 +102,9 @@ def _private():
 
             _asynchronous_reader = asyncio.StreamReader(loop = _loop)
 
-            with os.fdopen(_descriptor, mode = "rb", closefd = False) as _asynchronous_stream:
+            async with asynchronizer(await asynchronizer(
+                os.fdopen, _descriptor, mode = "rb", closefd = False
+            )) as _asynchronous_stream:
                 await _loop.connect_read_pipe(
                     lambda: asyncio.StreamReaderProtocol(_asynchronous_reader),
                     pipe = _asynchronous_stream
@@ -147,19 +149,19 @@ def _private():
             else: member.gid = _gid
             return member
 
-        async with _wrap_source() as source:
-            async with (
-                asynchronizer(await asynchronizer(lambda: _make_tar_reader(source = source))) as _reader,
-                asynchronizer(await asynchronizer(lambda: _make_tar_writer(destination = destination))) as _writer
-            ):
-                await asynchronizer(_reader.open)
-                await asynchronizer(_writer.open)
-                async for _member, _stream in asynchronizer(_reader):
-                    _member = await asynchronizer(lambda: _transform_member(member = _member))
-                    await asynchronizer(lambda: _writer(member = _member, stream = _stream))
+        async with (
+            _wrap_source() as source,
+            asynchronizer(await asynchronizer(_make_tar_reader, source = source)) as _reader,
+            asynchronizer(await asynchronizer(_make_tar_writer, destination = destination)) as _writer
+        ):
+            await asynchronizer(_reader.open)
+            await asynchronizer(_writer.open)
+            async for _member, _stream in asynchronizer(_reader):
+                _member = await asynchronizer(_transform_member, member = _member)
+                await asynchronizer(_writer, member = _member, stream = _stream)
 
     @contextlib.asynccontextmanager
-    async def _make_tar_subprocess(dry: bool, source: typing.Optional[typing.IO[bytes]], destination: str):
+    async def _open_tar_subprocess(dry: bool, source: typing.Optional[typing.IO[bytes]], destination: str):
         assert isinstance(dry, bool)
         assert isinstance(destination, str)
         assert destination
@@ -200,7 +202,7 @@ def _private():
 
         assert isinstance(asynchronizer, _Asynchronizer)
         async with asynchronizer(_prepare_source(path = source)) as source:
-            destination = await asynchronizer(lambda: _prepare_destination(path = destination, dry = dry))
+            destination = await asynchronizer(_prepare_destination, path = destination, dry = dry)
 
             if source is None:
                 async def _close_stdin():
@@ -219,27 +221,27 @@ def _private():
             print(f"{_dry_prefix} {_source_name} => {destination}", file = sys.stderr, flush = True)
 
             if id_map is None:
-                async with _make_tar_subprocess(
+                async with _open_tar_subprocess(
                     dry = dry, source = source, destination = destination
                 ) as _tar_subprocess:
                     if source is None: await _close_stdin()
                     await _tar_subprocess()
-                    return
+                return
 
             assert isinstance(id_map, _IdMap)
 
-            async with asynchronizer(_make_fifo()) as (_fifo_reader, _fifo_writer):
-                async with _make_tar_subprocess(
-                    dry = dry, source = _fifo_reader, destination = destination
-                ) as _tar_subprocess:
-                    await asynchronizer(_fifo_reader.close)
-                    await _remap_coroutine(
-                        source = source, destination = _fifo_writer,
-                        id_map = id_map, asynchronizer = asynchronizer
-                    )
-                    if source is None: await _close_stdin()
-                    await asynchronizer(_fifo_writer.close)
-                    await _tar_subprocess()
+            async with (
+                asynchronizer(_open_fifo()) as (_fifo_reader, _fifo_writer),
+                _open_tar_subprocess(dry = dry, source = _fifo_reader, destination = destination) as _tar_subprocess
+            ):
+                await asynchronizer(_fifo_reader.close)
+                await _remap_coroutine(
+                    source = source, destination = _fifo_writer,
+                    id_map = id_map, asynchronizer = asynchronizer
+                )
+                if source is None: await _close_stdin()
+                await asynchronizer(_fifo_writer.close)
+                await _tar_subprocess()
 
     def _spawn(*args, **kwargs): return asyncio.create_task(_coroutine(*args, **kwargs))
 
