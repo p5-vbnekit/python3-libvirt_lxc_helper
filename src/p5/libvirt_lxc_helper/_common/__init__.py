@@ -7,8 +7,10 @@ assert "__main__" != __name__
 def _private():
     from . import module_helpers as _module_helpers_module
 
+    _make_lazy_getter = _module_helpers_module.lazy_attributes.make_getter
+
     class _Result(object):
-        module_getter = _module_helpers_module.lazy_attributes.make_getter(dictionary = {
+        lazy_getter = _make_lazy_getter(dictionary = {
             "Action": lambda module: module.action.Class,
             "CliValidator": lambda module: module.cli_validator.Class,
             "PlatformInfo": lambda module: module.platform_info.Class,
@@ -20,7 +22,7 @@ def _private():
 
 _private = _private()
 
-__all__ = _private.module_getter.keys
+__all__ = _private.lazy_getter.keys
 __date__ = None
 __author__ = None
 __version__ = None
@@ -29,4 +31,4 @@ _fields = tuple()
 __bases__ = tuple()
 
 
-def __getattr__(name: str): return _private.module_getter(name = name)
+def __getattr__(name: str): return _private.lazy_getter(name = name)
