@@ -13,7 +13,7 @@ ENV EXAMPLE_D should be replaced
 
 RUN rm --force /etc/apt/sources.list
 COPY files/etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources
-RUN _packages=`apt-mark showmanual`; test -n "${_packages}" || exit 0; apt-mark auto ${_packages}
+RUN apt-mark showmanual | xargs --no-run-if-empty -- apt-mark auto --
 RUN apt update --assume-yes && apt install --assume-yes apt-utils
 RUN apt update --assume-yes && apt full-upgrade --assume-yes
 
