@@ -35,6 +35,7 @@ def _private():
 
             try:
                 for _path in _tarfile.getnames():
+                    if "." == _path: continue
                     _path = _validate_path(value = _path)
                     assert _path not in _members[0]
                     _members[0].add(_path)
