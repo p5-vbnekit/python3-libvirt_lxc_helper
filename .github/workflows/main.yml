@@ -11,14 +11,14 @@ jobs:
     - name: Installing dependencies
       run: |
         # installing dependencies
-        python -m pip install --upgrade pip
-        pip install --upgrade flake8
+        python -m pip install --upgrade -- pip
+        pip install --upgrade -- flake8
     - uses: actions/checkout@v4
       with: { path: snapshot }
     - name: Executing `flake8`
       run: |
         # executing `flake8`
-        flake8 --statistics --show-source --max-line-length=128 --extend-ignore=E251,E701 -- snapshot
+        flake8 --statistics --show-source --max-line-length=128 --extend-ignore=E251,E701 -- ./snapshot
 
   pytest:
     runs-on: ubuntu-latest
@@ -30,9 +30,9 @@ jobs:
         # installing dependencies
         export DEBIAN_FRONTEND=noninteractive
         sudo apt update --assume-yes
-        sudo apt install --assume-yes oci-image-tool
-        python -m pip install --upgrade pip
-        pip install --upgrade pytest pyyaml
+        sudo apt install --assume-yes -- oci-image-tool
+        python -m pip install --upgrade -- pip
+        pip install --upgrade -- pytest pyyaml
         mkdir --parents -- ./temporary/bin
         cat <<EOF >./temporary/bin/unshare
         #!/usr/bin/env python3
@@ -46,11 +46,11 @@ jobs:
         os.execv(_podman, ("podman", "unshare", *sys.argv[3:]))
         raise RuntimeError("bad state")
         EOF
-        chmod +x ./temporary/bin/unshare
+        chmod +x -- ./temporary/bin/unshare
     - uses: actions/checkout@v4
       with: { path: snapshot }
     - name: Installing this package
-      run: pip install --upgrade ./snapshot
+      run: pip install --upgrade -- ./snapshot
     - id: cache
       uses: actions/cache@v4
       with:
@@ -60,20 +60,20 @@ jobs:
       name: Generating oci images
       run: |
         # generating oci images
-        mkdir --parents temporary/oci
+        mkdir --parents -- ./temporary/oci
         docker build --pull --tag=example -- ./snapshot/examples/nginx/docker
         buildah build --pull --layers --tag=example -- ./snapshot/examples/nginx/docker
-        buildah push localhost/example oci-archive:temporary/oci/buildah.tar
-        podman image save --format=oci-archive -- localhost/example > temporary/oci/podman.tar
-        skopeo copy docker-daemon:example:latest oci-archive:temporary/oci/docker.tar
+        buildah push localhost/example oci-archive:./temporary/oci/buildah.tar
+        podman image save --format=oci-archive localhost/example >./temporary/oci/podman.tar
+        skopeo copy docker-daemon:example:latest oci-archive:./temporary/oci/docker.tar
     - name: Executing `pytest`
       run: |
         # executing `pytest`
-        PATH="`pwd`/temporary/bin:${PATH}" pytest -ra --basetemp=temporary/pytest \
-          --tests.examples.nginx-source=temporary/oci/docker.tar \
-          --tests.examples.nginx-source=temporary/oci/podman.tar \
-          --tests.examples.nginx-source=temporary/oci/buildah.tar \
-        ./snapshot/tests
+        PATH="`pwd`/temporary/bin:${PATH}" pytest -ra --basetemp=./temporary/pytest \
+          --tests.examples.nginx-source=./temporary/oci/docker.tar \
+          --tests.examples.nginx-source=./temporary/oci/podman.tar \
+          --tests.examples.nginx-source=./temporary/oci/buildah.tar \
+        -- ./snapshot/tests
     - if: failure()
       run: sudo tar --create --directory=temporary -- . | xz > test-context.tar.xz
     - if: failure()
