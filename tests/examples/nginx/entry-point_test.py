@@ -51,7 +51,7 @@ def local_configuration(request, tmp_path_factory):
             with tarfile.open(_source.as_posix(), "r") as _reader:
                 _directory = _temporary / f"sources/{next(_index_generator)}"
                 os.makedirs(_directory, exist_ok = False)
-                _reader.extractall(path = _directory)
+                _reader.extractall(path = _directory, filter = "tar")
                 assert 2 < len(os.listdir(_directory))
                 yield _directory
             _path = _temporary / f"sources/{next(_index_generator)}"
@@ -135,12 +135,14 @@ def test(local_configuration):
                 _archive_path = f"{path.as_posix()}.tar"
                 yield _archive_path
                 os.makedirs(path.as_posix(), exist_ok = False)
-                with tarfile.open(_archive_path, "r|") as _reader: _reader.extractall(path = path.as_posix())
+                with tarfile.open(_archive_path, "r|") as _reader: _reader.extractall(
+                    path = path.as_posix(), filter = "tar"
+                )
                 _script_directory_path = os.path.join(path, _script_example_base_name)
                 _script_archive_path = f"{_script_directory_path}.tar"
                 os.makedirs(_script_directory_path, exist_ok = False)
                 with tarfile.open(_script_archive_path, "r|") as _reader: _reader.extractall(
-                    path = _script_directory_path
+                    path = _script_directory_path, filter = "tar"
                 )
                 os.remove(_script_archive_path)
                 if not (0 < key): return
