@@ -46,7 +46,7 @@ def _private():
             assert self.__manager is not None, "not opened"
             assert self.__asynchronous is asynchronous
             if asynchronous: return self.__async_close(**_keywords)
-            self.__sync_close(**_keywords)
+            return self.__sync_close(**_keywords)
 
         def __init__(self, asynchronous: bool = False):
             assert isinstance(asynchronous, bool)

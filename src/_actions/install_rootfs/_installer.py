@@ -135,7 +135,7 @@ def _private():
             _attributes = dict(member.get_info())
             _path = _normalize_path(_attributes.pop("name"), drop_root = True).as_posix()
             if member.isdir(): _path = _path.rstrip("/")
-            if not _path.strip("."): return
+            if not _path.strip("."): return None
             member = tarfile.TarInfo(name = _path)
             for _key, _value in _attributes.items(): setattr(member, _key, _value)
             _uid, _gid = member.uid, member.gid

@@ -100,7 +100,7 @@ if "__main__" == __name__:
             assert isinstance(_action, str)
             if "main" == _action: return _main_action_routine(payload = _payload)
             assert "chroot" == _action
-            _chroot_action_routine(payload = _payload)
+            return _chroot_action_routine(payload = _payload)
 
         class _Result(object):
             routine = _routine
