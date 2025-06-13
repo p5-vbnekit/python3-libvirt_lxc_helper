@@ -1,0 +1,33 @@
+[project]
+name = "p5.libvirt_lxc_helper"
+readme = "README.md"
+version = "0.0.0"
+authors = [{name = "p5-vbnekit", email = "vbnekit@gmail.com"}]
+description = "libvirt_lxc helper tool"
+maintainers = [{name = "p5-vbnekit", email = "vbnekit@gmail.com"}]
+dependencies = ["python-magic"]
+license-files = ["LICENSE"]
+
+[project.urls]
+repository = "https://github.com/p5-vbnekit/p5-python3-libvirt_lxc_helper"
+
+[project.scripts]
+p5-libvirt_lxc_helper = "p5.libvirt_lxc_helper:entry_point"
+
+[project.optional-dependencies]
+dev = ["pyproject-flake8"]
+
+[build-system]
+requires = ["setuptools"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
+minversion = "6.0"
+
+[tool.flake8]
+extend-ignore = ["E251", "E701"]
+max-line-length = 128
+
+[tool.setuptools]
+package-dir = {"p5.libvirt_lxc_helper" = "src"}
