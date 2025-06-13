@@ -14,21 +14,33 @@ def _private():
 
         def tell(self, *args, **kwargs): return self.__stream.tell(*args, **kwargs)
 
+        def seek(self, *args, **kwargs):
+            try: return self.__stream.seek(*args, **kwargs)
+            finally: self.__finally()
+
         def read(self, *args, **kwargs):
-            _chunk = self.__stream.read(*args, **kwargs)
-            assert isinstance(_chunk, (str, bytes))
-            _size = len(_chunk)
-            if 0 < _size:
-                assert self.__left >= _size
-                self.__left -= _size
-            return _chunk
+            try: return self.__stream.read(*args, **kwargs)
+            finally: self.__finally()
 
         def __init__(self, stream, size: int):
             super().__init__()
             assert isinstance(size, int)
             assert 0 < size
+            _begin = stream.tell()
+            self.__end = size + _begin
             self.__left = size
+            self.__begin = _begin
             self.__stream = stream
+
+        def __finally(self):
+            _position = self.__stream.tell()
+
+            try:
+                assert self.__begin <= _position
+                assert self.__end >= _position
+            finally:
+                _position = max(self.__begin, min(self.__end, _position))
+                self.__left = min(self.__left, self.__end - _position)
 
     @contextlib.contextmanager
     def _data_wrapper(source: typing.Union[str, bytes], limit: typing.Optional[int], exact: typing.Optional[int]):
@@ -55,10 +67,13 @@ def _private():
 
         class _Class(object):
             @staticmethod
-            def read(*args, **kwargs): return _helper.read(*args, **kwargs)
+            def tell(*args, **kwargs): return _helper.tell(*args, **kwargs)
 
             @staticmethod
-            def tell(*args, **kwargs): return _helper.tell(*args, **kwargs)
+            def seek(*args, **kwargs): return _helper.seek(*args, **kwargs)
+
+            @staticmethod
+            def read(*args, **kwargs): return _helper.read(*args, **kwargs)
 
         yield _Class()
         assert (exact is None) or (0 == _helper.left)

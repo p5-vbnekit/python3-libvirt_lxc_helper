@@ -74,7 +74,7 @@ def _private():
         assert isinstance(size, int)
         _path = _parse_digest(value = digest).path
         with source.open(_path) as _stream:
-            with _make_size_guarantee(source = _stream, exact = size) as _guarantee: yield _guarantee
+            with _make_size_guarantee(source = _stream, limit = size) as _guarantee: yield _guarantee
 
     @contextlib.contextmanager
     def _open_blob_writer(image: str):
@@ -105,10 +105,11 @@ def _private():
         assert value
         assert value.startswith(_layer_media_type_begin)
         _value = value[_layer_media_type_minimum_size:]
-        if not _value: return value
-        assert "+" == _value[0]
-        _value = _value[1:]
-        assert _value in {"gzip", "bzip"}
+        if _value:
+            assert "+" == _value[0]
+            _value = _value[1:]
+            assert _value in {"gzip", "bzip"}
+        return value
 
     def _read_bundle(manifest: dict, source: _SourceReader):
         assert isinstance(manifest, dict)

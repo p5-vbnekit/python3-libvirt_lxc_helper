@@ -100,7 +100,7 @@ def _private():
                 assert isinstance(_layer, dict)
                 _media = _layer["mediaType"]
                 assert isinstance(_media, str)
-                assert "application/vnd.oci.image.layer.v1.tar+gzip" == _media
+                assert _media in {"application/vnd.oci.image.layer.v1.tar", "application/vnd.oci.image.layer.v1.tar+gzip"}
                 _size = _layer["size"]
                 assert isinstance(_size, int)
                 assert 0 < _size
